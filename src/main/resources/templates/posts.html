@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>All Posts</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        .post-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            overflow-y: auto;
+            height: 600px;
+        }
+        .post-item {
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+        }
+        .post-item:last-child {
+            border-bottom: none;
+        }
+        .post-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .post-author {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .post-date {
+            color: #777;
+            margin-bottom: 10px;
+        }
+        .actions {
+            margin-top: 10px;
+        }
+        .actions a {
+            margin-right: 10px;
+            text-decoration: none;
+            color: #007BFF;
+        }
+        .actions a:hover {
+            text-decoration: underline;
+        }
+        .filter-container {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        .filter-container h4 {
+            margin-bottom: 10px;
+        }
+        .filter-container label {
+            display: block; /* Ensure each label is on a new line */
+            margin-bottom: 10px;
+        }
+        .dropdown-button {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 200px; /* Adjust width as needed */
+            text-align: left;
+        }
+        .dropdown-container {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-content {
+            background-color: #f9f9f9;
+            min-width: 200px; /* Adjust width as needed */
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 5px;
+            padding: 10px;
+            max-height: 400px; /* Adjust as needed */
+            overflow-y: auto; /* Adds scrollbar if content is too long */
+            display: none; /* Initially hidden */
+            position: absolute;
+            top: 100%; /* Position below the button */
+            left: 0;
+        }
+        details {
+            cursor: pointer;
+            display: inline-block;
+        }
+        summary {
+            cursor: pointer;
+        }
+        details[open] .dropdown-content {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<h1>All Posts</h1>
+<div>
+    <a href="/posts/new">Create New Post</a>
+</div>
+
+<!-- Filter by Tags and Authors -->
+<div class="filter-container">
+    <h4>Filter by Tags and Authors</h4>
+    <div class="dropdown-container">
+        <details>
+            <summary class="dropdown-button">Select Filters</summary>
+            <div class="dropdown-content">
+                <!-- Tags Filter -->
+                <form action="/posts/filter" method="get">
+                    <h5>Tags</h5>
+                    <div th:each="tag : ${tags}">
+                        <label>
+                            <input type="checkbox" name="tags" th:value="${tag.name}" />
+                            <span th:text="${tag.name}"/>
+                        </label>
+                    </div>
+                    <hr>
+                    <!-- Authors Filter -->
+                    <h5>Authors</h5>
+                    <div th:each="author : ${authors}">
+                        <label>
+                            <input type="checkbox" name="authors" th:value="${author}" />
+                            <span th:text="${author}"/>
+                        </label>
+                    </div>
+                    <button type="submit">Apply Filters</button>
+                </form>
+            </div>
+        </details>
+    </div>
+</div>
+
+<div class="post-container">
+    <div th:each="post : ${posts}" class="post-item">
+        <div class="post-title" th:text="${post.title}">Post Title</div>
+        <div class="post-author" th:text="${post.author}">Author Name</div>
+        <div class="post-date" th:text="${#temporals.format(post.publishedAt, 'yyyy-MM-dd HH:mm')}">Published Date</div>
+        <div class="actions">
+            <a th:href="@{/posts/{id}(id=${post.id})}">View</a>
+        </div>
+    </div>
+</div>
+
+<!-- Sort by Published Date -->
+<div class="sort-container">
+    <form action="/posts/sorted" method="get">
+        <label for="sort">Sort posts by published date:</label>
+        <select id="sort" name="sort" onchange="this.form.submit()">
+            <option value="desc" th:selected="${order == 'desc'}">Newest first</option>
+            <option value="asc" th:selected="${order == 'asc'}">Oldest first</option>
+        </select>
+    </form>
+</div>
+
+<!-- Search Posts -->
+<div class="search-container">
+    <form action="/posts/search" method="get">
+        <label for="query">Search posts:</label>
+        <input type="text" id="query" name="query" placeholder="Search by title, content, author, tags">
+        <button type="submit">Search</button>
+    </form>
+</div>
+
+<!-- Pagination (Optional)-->
+
+<div class="pagination">
+    <ul>
+        <li th:if="${currentPage > 0}">
+            <a th:href="@{/posts(start=${(currentPage - 1) * size + 1}, limit=${size})}">Previous page</a>
+        </li>
+        <li th:if="${currentPage < totalPages - 1}">
+            <a th:href="@{/posts(start=${(currentPage + 1) * size + 1}, limit=${size})}">Next page</a>
+        </li>
+        <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+            <a th:href="@{/posts(start=${i * size + 1}, limit=${size})}"
+               th:text="'Page ' + (${i + 1})"></a>
+        </li>
+    </ul>
+</div>
+
+
+
+
+
+
+</body>
+</html>
+
+
+
